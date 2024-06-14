@@ -1,37 +1,36 @@
 <?php
-require 'includes/db.php';
+session_start();
+require 'includes/db.php'; // Asegúrate de que esta ruta es correcta
+
+// Obtener productos de la base de datos
+$stmt = $conn->prepare("SELECT * FROM productos");
+$stmt->execute();
+$productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <meta charset="utf-8">
-    <title>Ferretería E-commerce</title>
-    <link rel="stylesheet" href="assets/style.css">
+    <meta charset="UTF-8">
+    <title>Ferretería eCommerce</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <?php include 'includes/header.php'; ?>
 
-    <h1>Productos Disponibles</h1>
-    <div class="product-list">
-        <?php
-        $query = $conn->prepare("SELECT * FROM productos");
-        $query->execute();
-        $productos = $query->fetchAll(PDO::FETCH_ASSOC);
-
-        foreach ($productos as $producto) {
-            echo '<div class="product">';
-            echo '<h2>' . $producto['Nombre_producto'] . '</h2>';
-            echo '<p>' . $producto['Descripcion'] . '</p>';
-            echo '<p>Precio: $' . $producto['Precio_producto'] . '</p>';
-            echo '<p>Stock: ' . $producto['Cantidad'] . '</p>';
-            echo '<form action="add_to_cart.php" method="post">';
-            echo '<input type="hidden" name="ID_producto" value="' . $producto['ID_producto'] . '">';
-            echo '<input type="submit" value="Agregar al carrito">';
-            echo '</form>';
-            echo '</div>';
-        }
-        ?>
+    <h1>Productos</h1>
+    <div class="productos">
+        <?php foreach ($productos as $producto): ?>
+            <div class="producto">
+                <h2><?php echo htmlspecialchars($producto['Nombre_producto']); ?></h2>
+                <p><?php echo htmlspecialchars($producto['Descripcion']); ?></p>
+                <p>Precio: $<?php echo htmlspecialchars($producto['Precio_producto']); ?></p>
+                <form action="agregar_carrito.php" method="POST">
+                    <input type="hidden" name="id_producto" value="<?php echo $producto['ID_producto']; ?>">
+                    <button type="submit">Agregar al carrito</button>
+                </form>
+            </div>
+        <?php endforeach; ?>
     </div>
 </body>
 </html>

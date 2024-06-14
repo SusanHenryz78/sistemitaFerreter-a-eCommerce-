@@ -1,54 +1,53 @@
 <?php
 session_start();
-require 'db.php';
+require 'includes/db.php'; // Asegúrate de que la ruta es correcta
 
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit();
+// Inicializar carrito si no existe
+if (!isset($_SESSION['carrito'])) {
+    $_SESSION['carrito'] = array();
 }
 
-$cart_items = [];
-$total_price = 0;
+// Obtener detalles del carrito
+$carrito = $_SESSION['carrito'];
+$productos_en_carrito = [];
 
-if (isset($_SESSION['cart'])) {
-    foreach ($_SESSION['cart'] as $id => $quantity) {
-        $query = $conn->prepare("SELECT * FROM productos WHERE ID_Producto = :id");
-        $query->bindParam(':id', $id);
-        $query->execute();
-        $product = $query->fetch(PDO::FETCH_ASSOC);
-
-        $product['quantity'] = $quantity;
-        $cart_items[] = $product;
-        $total_price += $product['Precio_producto'] * $quantity;
-    }
+if (!empty($carrito)) {
+    $ids_productos = array_keys($carrito);
+    $placeholders = implode(',', array_fill(0, count($ids_productos), '?'));
+    $stmt = $conn->prepare("SELECT * FROM productos WHERE ID_producto IN ($placeholders)");
+    $stmt->execute($ids_productos);
+    $productos_en_carrito = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <meta charset="utf-8">
-    <title>Cart</title>
-    <link rel="stylesheet" href="assets/style.css">
+    <meta charset="UTF-8">
+    <title>Carrito</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <?php include 'includes/header.php'; ?>
 
-    <h1>Shopping Cart</h1>
-    <?php if (!empty($cart_items)): ?>
-        <div class="cart">
-            <?php foreach ($cart_items as $item): ?>
-                <div class="cart-item">
-                    <h2><?= htmlspecialchars($item['Nombre_producto']) ?></h2>
-                    <p>Quantity: <?= htmlspecialchars($item['quantity']) ?></p>
-                    <p>Price: $<?= htmlspecialchars($item['Precio_producto']) ?></p>
-                </div>
-            <?php endforeach; ?>
-        </div>
-        <h2>Total: $<?= $total_price ?></h2>
-        <a href="checkout.php">Checkout</a>
-    <?php else: ?>
-        <p>Your cart is empty.</p>
-    <?php endif; ?>
+    <h1>Carrito de Compras</h1>
+    <div class="carrito">
+        <?php if (empty($productos_en_carrito)): ?>
+            <p>El carrito está vacío.</p>
+        <?php else: ?>
+            <ul>
+                <?php foreach ($productos_en_carrito as $producto): ?>
+                    <li>
+                        <?php echo htmlspecialchars($producto['Nombre_producto']); ?> - 
+                        Cantidad: <?php echo htmlspecialchars($carrito[$producto['ID_producto']]); ?> - 
+                        Precio: $<?php echo htmlspecialchars($producto['Precio_producto']); ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+            <form action="checkout.php" method="POST">
+                <button type="submit">Proceder al Pago</button>
+            </form>
+        <?php endif; ?>
+    </div>
 </body>
 </html>

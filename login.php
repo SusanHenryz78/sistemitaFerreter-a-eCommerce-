@@ -1,45 +1,43 @@
 <?php
 session_start();
 require 'includes/db.php';
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $email = $_POST['email'];
+    $password = $_POST['password'];
+
+    $stmt = $conn->prepare("SELECT * FROM clientes WHERE Email = ?");
+    $stmt->execute([$email]);
+    $user = $stmt->fetch();
+
+    if ($user && password_verify($password, $user['password'])) {
+        $_SESSION['user_id'] = $user['ID_Clientes'];
+        $_SESSION['user_name'] = $user['Nombre'];
+        header('Location: index.php');
+        exit();
+    } else {
+        echo "Email o contraseña incorrectos.";
+    }
+}
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <title>Login</title>
-    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <?php include 'includes/header.php'; ?>
 
-    <h1>Iniciar Sesión</h1>
-    <form action="login.php" method="post">
+    <h1>Login</h1>
+    <form action="login.php" method="POST">
         <label for="email">Email:</label>
-        <input type="email" name="email" id="email" required>
+        <input type="email" name="email" required><br>
         <label for="password">Contraseña:</label>
-        <input type="password" name="password" id="password" required>
-        <input type="submit" value="Iniciar Sesión">
+        <input type="password" name="password" required><br>
+        <button type="submit">Iniciar sesión</button>
     </form>
-
-    <?php
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $email = $_POST['email'];
-        $password = $_POST['password'];
-
-        $query = $conn->prepare("SELECT * FROM clientes WHERE Email = :email");
-        $query->bindParam(':email', $email);
-        $query->execute();
-        $user = $query->fetch(PDO::FETCH_ASSOC);
-
-        if ($user && password_verify($password, $user['Password'])) {
-            $_SESSION['user_id'] = $user['ID_Clientes'];
-            header('Location: index.php');
-            exit;
-        } else {
-            echo '<p>Correo o contraseña incorrectos</p>';
-        }
-    }
-    ?>
 </body>
 </html>
